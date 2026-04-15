@@ -38,13 +38,22 @@ class OSSHandler(BaseHandler, EnforceOverrides):
         # Used to indicate where the tokenizer and config should be loaded from
         self.model_path_or_id = None
 
+        # Config-level base_url and tokenizer_path (from ModelConfig) take priority over env vars
+        self.config_base_url = kwargs.get("base_url", None)
+        self.config_tokenizer_path = kwargs.get("tokenizer_path", None)
+
         # Read from env vars with fallbacks
         self.local_server_endpoint = os.getenv("LOCAL_SERVER_ENDPOINT", "localhost")
         self.local_server_port = os.getenv("LOCAL_SERVER_PORT", LOCAL_SERVER_PORT)
 
         # Support custom base_url and api_key for remote/local OpenAI-compatible deployments (e.g., vLLM)
         # Use REMOTE_OPENAI_* variables to avoid conflicts with main OPENAI_* variables
-        self.base_url = os.getenv("REMOTE_OPENAI_BASE_URL", f"http://{self.local_server_endpoint}:{self.local_server_port}/v1")
+        # ModelConfig.base_url > REMOTE_OPENAI_BASE_URL env var > default localhost
+        self.base_url = (
+            self.config_base_url
+            or os.getenv("REMOTE_OPENAI_BASE_URL")
+            or f"http://{self.local_server_endpoint}:{self.local_server_port}/v1"
+        )
         self.api_key = os.getenv("REMOTE_OPENAI_API_KEY", "EMPTY")
         self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
 
@@ -118,10 +127,12 @@ class OSSHandler(BaseHandler, EnforceOverrides):
             }
 
         # For remote OpenAI-compatible endpoints, use specified tokenizer path if provided
-        is_remote_endpoint = bool(os.getenv("REMOTE_OPENAI_BASE_URL"))
-        tokenizer_path = os.getenv("REMOTE_OPENAI_TOKENIZER_PATH", self.model_path_or_id)
+        # ModelConfig.tokenizer_path > REMOTE_OPENAI_TOKENIZER_PATH env var > model_path_or_id
+        is_remote_endpoint = bool(self.config_base_url or os.getenv("REMOTE_OPENAI_BASE_URL"))
+        explicit_tokenizer_path = self.config_tokenizer_path or os.getenv("REMOTE_OPENAI_TOKENIZER_PATH")
+        tokenizer_path = explicit_tokenizer_path or self.model_path_or_id
 
-        if is_remote_endpoint and os.getenv("REMOTE_OPENAI_TOKENIZER_PATH"):
+        if is_remote_endpoint and explicit_tokenizer_path:
             # Use specified tokenizer for remote endpoints
             tokenizer_kwargs = {
                 "pretrained_model_name_or_path": tokenizer_path,

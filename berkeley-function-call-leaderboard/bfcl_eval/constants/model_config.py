@@ -54,6 +54,8 @@ from bfcl_eval.model_handler.local_inference.minicpm_fc import MiniCPMFCHandler
 from bfcl_eval.model_handler.local_inference.mistral_fc import MistralFCHandler
 from bfcl_eval.model_handler.local_inference.phi import PhiHandler
 from bfcl_eval.model_handler.local_inference.phi_fc import PhiFCHandler
+from bfcl_eval.model_handler.local_inference.phi_reasoning import PhiReasoningHandler
+from bfcl_eval.model_handler.local_inference.phi_reasoning_fc import PhiReasoningFCHandler
 from bfcl_eval.model_handler.local_inference.quick_testing_oss import (
     QuickTestingOSSHandler,
 )
@@ -113,6 +115,14 @@ class ModelConfig:
 
     # True if this model does not allow '.' in function names
     underscore_to_dot: bool = False
+
+    # Optional: base URL for a remote OpenAI-compatible endpoint (e.g., "http://localhost:10000/v1")
+    # Overrides the REMOTE_OPENAI_BASE_URL environment variable if set.
+    base_url: Optional[str] = None
+
+    # Optional: path to tokenizer (local dir or HuggingFace ID) for remote endpoints.
+    # Overrides the REMOTE_OPENAI_TOKENIZER_PATH environment variable if set.
+    tokenizer_path: Optional[str] = None
 
 
 # Inference through API calls
@@ -1500,6 +1510,46 @@ local_inference_model_map = {
         output_price=None,
         is_fc_model=True,
         underscore_to_dot=False,
+    ),
+    "microsoft/Phi-4-reasoning-vision-15B": ModelConfig(
+        model_name="microsoft/Phi-4-reasoning-vision-15B",
+        display_name="Phi-4-reasoning-vision-15B (FC)",
+        url="https://huggingface.co/microsoft/Phi-4-reasoning-vision-15B",
+        org="Microsoft",
+        license="MIT",
+        model_handler=PhiReasoningFCHandler,
+        input_price=None,
+        output_price=None,
+        is_fc_model=True,
+        underscore_to_dot=False,
+    ),
+    "microsoft/Phi-4-reasoning-vision-5B-base": ModelConfig(
+        model_name="Phi-4-reasoning-vision-5B-base",
+        display_name="Phi-4-reasoning-vision-5B-base (FC)",
+        url="https://huggingface.co/microsoft/Phi-4-reasoning-vision-5B-base",
+        org="Microsoft",
+        license="MIT",
+        model_handler=PhiReasoningFCHandler,
+        input_price=None,
+        output_price=None,
+        is_fc_model=True,
+        underscore_to_dot=False,
+        base_url="http://localhost:10000/v1",
+        tokenizer_path="/datadisk/checkpoints/neel-p0-phi4mm-4b-triplemath-0202-r-notv2-qfb98/checkpoints/checkpoint-27276/",
+    ),
+    "microsoft/Phi-4-reasoning-vision-5B": ModelConfig(
+        model_name="Phi-4-reasoning-vision-5B",
+        display_name="Phi-4-reasoning-vision-5B (FC)",
+        url="https://huggingface.co/microsoft/Phi-4-reasoning-vision-5B",
+        org="Microsoft",
+        license="MIT",
+        model_handler=PhiReasoningFCHandler,
+        input_price=None,
+        output_price=None,
+        is_fc_model=True,
+        underscore_to_dot=False,
+        base_url="http://localhost:10001/v1",
+        tokenizer_path="/datadisk/checkpoints/neel-p0-phi4mm-4b-multi-16k-0402-r-tool-b8lw4/checkpoints/checkpoint-4728/",        
     ),
     "ibm-granite/granite-3.2-8b-instruct": ModelConfig(
         model_name="ibm-granite/granite-3.2-8b-instruct",

@@ -106,7 +106,7 @@ def generate(
         callback=handle_multiple_input
     ),
     temperature: float = typer.Option(
-        0.001, help="The temperature parameter for the model."
+        0, help="The temperature parameter for the model."
     ),
     include_input_log: bool = typer.Option(
         False,
@@ -163,6 +163,11 @@ def generate(
         "--lora-modules",
         help='Specify the path to the LoRA modules for vLLM backend in name="path" format. Can be specified multiple times.',
     ),
+    thinking_mode: bool = typer.Option(
+        False,
+        "--thinking-mode",
+        help="Enable thinking mode (<think>...</think>) for reasoning models.",
+    ),
 ):
     """
     Generate the LLM response for one or more models on a test-category (same as openfunctions_evaluation.py).
@@ -186,6 +191,7 @@ def generate(
         enable_lora=enable_lora,
         max_lora_rank=max_lora_rank,
         lora_modules=lora_modules,
+        thinking_mode=thinking_mode,
     )
     load_dotenv(dotenv_path=DOTENV_PATH, verbose=True, override=True)  # Load the .env file
     generation_main(args)

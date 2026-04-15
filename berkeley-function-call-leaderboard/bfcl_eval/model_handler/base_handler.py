@@ -545,6 +545,9 @@ class BaseHandler:
                 }
                 if reasoning_content:
                     log_entry["reasoning_content"] = reasoning_content
+                model_responses_message_for_chat_history = model_response_data.get("model_responses_message_for_chat_history")
+                if model_responses_message_for_chat_history is not None:
+                    log_entry["model_responses_message_for_chat_history"] = model_responses_message_for_chat_history
 
                 current_step_inference_log.append(log_entry)
 
