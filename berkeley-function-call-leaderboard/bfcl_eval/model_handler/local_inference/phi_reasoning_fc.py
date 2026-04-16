@@ -14,7 +14,7 @@ class PhiReasoningFCHandler(OSSHandler):
 
     Chat template: <|im_start|>/<|im_sep|>/<|im_end|>
     Tool tokens: <tool>...</tool>, <tool_call>...</tool_call>, <tool_response>...</tool_response>
-    Reasoning tokens: <think>...</think> or <|dummy_84|>
+    Reasoning tokens: <think>...</think> or <nothink>
     """
 
     def __init__(
@@ -114,7 +114,7 @@ class PhiReasoningFCHandler(OSSHandler):
         if self.thinking_mode:
             formatted_prompt += "<think>"
         else:
-            formatted_prompt += "<|dummy_84|>"
+            formatted_prompt += "<nothink>"
 
         return formatted_prompt
 
@@ -191,12 +191,12 @@ class PhiReasoningFCHandler(OSSHandler):
 
     @staticmethod
     def _strip_reasoning(text: str) -> str:
-        """Strip <think>...</think> blocks and <|dummy_84|> tokens from the response."""
+        """Strip <think>...</think> blocks and <nothink> tokens from the response."""
         # Remove <think>...</think> blocks
         if "</think>" in text:
             text = text.split("</think>")[-1]
-        # Remove <|dummy_84|> token
-        text = text.replace("<|dummy_84|>", "")
+        # Remove <nothink> token
+        text = text.replace("<nothink>", "")
         return text.strip()
 
     @staticmethod
