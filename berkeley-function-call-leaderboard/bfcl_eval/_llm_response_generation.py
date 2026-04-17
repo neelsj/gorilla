@@ -319,16 +319,19 @@ def generate_results(args, model_name, test_cases_total):
                 done, _ = wait(in_flight, return_when=FIRST_COMPLETED)
                 for future in done:
                     test_case_id = in_flight.pop(future)
-                    result_dict = future.result()
-
-                    # Enqueue the result for the writer thread to handle file IO
-                    write_queue.put(result_dict)
+                    try:
+                        result_dict = future.result()
+                    except Exception as exc:
+                        print(f"\n[WARN] {test_case_id} failed: {exc!r}; skipping.")
+                    else:
+                        # Enqueue the result for the writer thread to handle file IO
+                        write_queue.put(result_dict)
 
                     # Update progress bar right after inference completes
                     pbar.update()
                     completed.add(test_case_id)
 
-                    # unlock children
+                    # unlock children (even on failure so the scheduler doesn't deadlock)
                     for child_id in children_of[test_case_id]:
                         dependencies[child_id].discard(test_case_id)
                         if not dependencies[child_id]:
