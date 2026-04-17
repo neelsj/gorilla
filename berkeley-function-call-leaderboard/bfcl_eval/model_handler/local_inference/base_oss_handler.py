@@ -96,6 +96,23 @@ class OSSHandler(BaseHandler, EnforceOverrides):
         Spin up a local server for the model.
         If the server is already running, skip the setup.
         """
+        # Allow bypassing tokenizer loading entirely when you're hitting a
+        # remote endpoint and just want a fixed per-request max_tokens budget.
+        # Set BFCL_MAX_TOKENS=<int> (and optionally BFCL_MAX_CONTEXT_LENGTH=<int>,
+        # defaults to 131072) to skip the AutoTokenizer / AutoConfig load.
+        override_max_tokens = os.getenv("BFCL_MAX_TOKENS")
+        if override_max_tokens:
+            self.model_path_or_id = (
+                local_model_path if local_model_path else self.model_name_huggingface
+            )
+            self.tokenizer = None  # _query_prompting will use the env override
+            self.max_context_length = int(os.getenv("BFCL_MAX_CONTEXT_LENGTH", "131072"))
+            print(
+                f"BFCL_MAX_TOKENS={override_max_tokens} set; skipping tokenizer load. "
+                f"max_context_length={self.max_context_length}"
+            )
+            return
+
         from transformers import AutoConfig, AutoTokenizer
 
         # Determine the model source
@@ -333,18 +350,22 @@ class OSSHandler(BaseHandler, EnforceOverrides):
         formatted_prompt: str = self._format_prompt(message, function)
         inference_data["inference_input_log"] = {"formatted_prompt": formatted_prompt}
 
-        # Tokenize the formatted prompt to get token count
-        input_token_count = len(self.tokenizer.tokenize(formatted_prompt))
-
-        # Determine the number of tokens to request. Cap it at 4096 if the model has a larger limit.
-        if self.max_context_length < input_token_count + 2:
-            # If the prompt is already at the max length, just request 1000 token, we will get an error anyway
-            leftover_tokens_count = 1000
+        override_max_tokens = os.getenv("BFCL_MAX_TOKENS")
+        if override_max_tokens:
+            leftover_tokens_count = int(override_max_tokens)
         else:
-            leftover_tokens_count = min(
-                4096,
-                self.max_context_length - input_token_count - 2,
-            )
+            # Tokenize the formatted prompt to get token count
+            input_token_count = len(self.tokenizer.tokenize(formatted_prompt))
+
+            # Determine the number of tokens to request. Cap it at 4096 if the model has a larger limit.
+            if self.max_context_length < input_token_count + 2:
+                # If the prompt is already at the max length, just request 1000 token, we will get an error anyway
+                leftover_tokens_count = 1000
+            else:
+                leftover_tokens_count = min(
+                    4096,
+                    self.max_context_length - input_token_count - 2,
+                )
 
         extra_body = {}
         if hasattr(self, "stop_token_ids"):
@@ -371,6 +392,15 @@ class OSSHandler(BaseHandler, EnforceOverrides):
                 timeout=72000,  # Avoid timeout errors
             )
         end_time = time.time()
+
+        # Sanitize response text: keep all valid Unicode (emoji, CJK, etc.)
+        # but replace only truly broken byte sequences / orphaned surrogates
+        # that would later crash json.dumps or downstream processing.
+        for choice in api_response.choices:
+            if hasattr(choice, "text") and choice.text:
+                choice.text = choice.text.encode(
+                    "utf-8", errors="surrogatepass"
+                ).decode("utf-8", errors="replace")
 
         return api_response, end_time - start_time
 
