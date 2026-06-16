@@ -55,7 +55,10 @@ from bfcl_eval.model_handler.local_inference.mistral_fc import MistralFCHandler
 from bfcl_eval.model_handler.local_inference.phi import PhiHandler
 from bfcl_eval.model_handler.local_inference.phi_fc import PhiFCHandler
 from bfcl_eval.model_handler.local_inference.phi_reasoning import PhiReasoningHandler
-from bfcl_eval.model_handler.local_inference.phi_reasoning_fc import PhiReasoningFCHandler
+from bfcl_eval.model_handler.local_inference.phi_reasoning_fc import (
+    FaraPhiReasoningFCHandler,
+    PhiReasoningFCHandler,
+)
 from bfcl_eval.model_handler.local_inference.quick_testing_oss import (
     QuickTestingOSSHandler,
 )
@@ -1549,7 +1552,21 @@ local_inference_model_map = {
         is_fc_model=True,
         underscore_to_dot=False,
         base_url="http://localhost:10001/v1",
-        tokenizer_path="/datadisk/checkpoints/neel-p0-phi4mm-4b-multi-16k-0402-r-tool-b8lw4/checkpoints/checkpoint-4728/",        
+        tokenizer_path="/datadisk/checkpoints/neel-p0-phi4mm-4b-multi-16k-0402-r-tool-b8lw4/checkpoints/checkpoint-4728/",
+    ),
+    "microsoft/Fara-Phi-4-vision-5B": ModelConfig(
+        model_name="Fara-Phi-4-vision-5B",
+        display_name="Fara-Phi-4-vision-5B (FC)",
+        url="https://huggingface.co/microsoft/Phi-4-reasoning-vision-5B",
+        org="Microsoft",
+        license="MIT",
+        model_handler=FaraPhiReasoningFCHandler,
+        input_price=None,
+        output_price=None,
+        is_fc_model=True,
+        underscore_to_dot=False,
+        base_url="http://localhost:10001/v1",
+        tokenizer_path="/datadisk/checkpoints/neel-p0-phi4mm-4b-multi-16k-0402-r-tool-b8lw4/checkpoints/checkpoint-4728/",
     ),
     "ibm-granite/granite-3.2-8b-instruct": ModelConfig(
         model_name="ibm-granite/granite-3.2-8b-instruct",

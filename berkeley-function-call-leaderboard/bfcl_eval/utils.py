@@ -356,7 +356,7 @@ def load_file(file_path, sort_by_id: bool = False, use_lock: bool = True) -> lis
     result = []
 
     def _load_entries(input_path: str) -> None:
-        with open(input_path) as f:
+        with open(input_path, encoding="utf-8", errors="surrogateescape") as f:
             file = f.readlines()
             for line in file:
                 content = json.loads(line)
@@ -476,7 +476,7 @@ def write_list_of_dicts_to_file(filename, data, subdir=None, use_lock: bool = Tr
 
     def _write_entries(output_path: str):
         """Internal helper that performs the actual write operation."""
-        with open(output_path, "w", encoding="utf-8") as f:
+        with open(output_path, "w", encoding="utf-8", errors="surrogateescape") as f:
             for i, entry in enumerate(data):
                 # Go through each key-value pair in the dictionary to make sure the values are JSON serializable
                 entry = make_json_serializable(entry)
